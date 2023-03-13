@@ -5,11 +5,6 @@ import (
 	"net/http"
 )
 
-type ErrorResponse struct {
-	Error  string            `json:"error"`
-	Fields map[string]string `json:"fields,omitempty"`
-}
-
 // JSON converts a Go value to JSON and sends it to the client.
 // If the code is StatusNoContent, no body is sent.
 // Adapted from https://github.com/ardanlabs/service/tree/master/foundation/web
