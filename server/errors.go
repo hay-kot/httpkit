@@ -6,6 +6,12 @@ type shutdownError struct {
 	message string
 }
 
+// SignalShutdown returns an error that indicates that the server has lost
+// integrity and should be shut down.
+func SignalShutdown(message string) error {
+	return &shutdownError{message}
+}
+
 func (e *shutdownError) Error() string {
 	return e.message
 }
