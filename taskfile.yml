@@ -41,3 +41,9 @@ tasks:
       - task: tidy
       - task: lint
       - task: test
+
+  example:
+    desc: Runs an example task
+    dir: .examples/err_trace_output
+    cmds:
+      - go run *.go
