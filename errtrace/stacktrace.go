@@ -127,10 +127,6 @@ func TraceData(err error) (*StackTraceData, error) {
 	}, nil
 }
 
-func TraceString(err error) (trace string, ok bool) {
-	if !IsTraceable(err) {
-		return "", false
-	}
-
-	return stringer(err), true
+func TraceString(err error) string {
+	return stringer(err)
 }

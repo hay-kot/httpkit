@@ -24,11 +24,7 @@ func ServiceNewUser() error {
 }
 
 func printErr(err error) {
-	trace, ok := errtrace.TraceString(err)
-	if !ok {
-		fmt.Println("not traceable")
-		return
-	}
+	trace := errtrace.TraceString(err)
 
 	fmt.Print(trace)
 }
@@ -45,6 +41,7 @@ func main() {
 
 	println("\n------- Non-Traceable error -------\n")
 	err = errors.New("test")
+	err = fmt.Errorf("outer: %w", err)
 	printErr(err)
 
 	println("\n------- Multiple Traceable errors, but the first one is not Traceable -------\n")
