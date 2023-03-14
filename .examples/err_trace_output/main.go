@@ -8,9 +8,9 @@ import (
 )
 
 func CreateUser() error {
-	err := errtrace.Annotated("user with id 1 already exists")
+	err := errors.New("user with id 1 already exists")
 	err = fmt.Errorf("wrap: %w", err)
-	return errtrace.Traceable(err, "error writing to database")
+	return errtrace.TraceWrap(err, "error writing to database")
 }
 
 func RepoNewUser() error {
@@ -20,7 +20,7 @@ func RepoNewUser() error {
 
 func ServiceNewUser() error {
 	err := RepoNewUser()
-	return errtrace.Traceable(err, "error creating user in database")
+	return errtrace.TraceWrap(err, "error creating user in database")
 }
 
 func printErr(err error) {
@@ -30,13 +30,13 @@ func printErr(err error) {
 		return
 	}
 
-	fmt.Println(trace)
+	fmt.Print(trace)
 }
 
 func main() {
 	println("\n------- Multiple Traceable errors -------\n")
 	err := ServiceNewUser()
-	err = errtrace.Traceable(err, "failed to do something")
+	err = errtrace.TraceWrap(err, "failed to do something")
 	printErr(err)
 
 	println("\n------- Multiple Traceable errors wrapped by generic error -------\n")
@@ -48,6 +48,6 @@ func main() {
 	printErr(err)
 
 	println("\n------- Multiple Traceable errors, but the first one is not Traceable -------\n")
-	err = fmt.Errorf("outer: %w", errtrace.Traceable(errors.New("inner error"), "failed to do something"))
+	err = fmt.Errorf("outer: %w", errtrace.TraceWrap(errors.New("inner error"), "failed to do something"))
 	printErr(err)
 }

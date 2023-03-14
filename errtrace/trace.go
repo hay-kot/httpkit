@@ -12,17 +12,17 @@ func IsTraceable(err error) bool {
 	return errors.As(err, &t)
 }
 
-// Traceable wraps an error within a stacktrace and returns the new error.
-//   - The stacktrace is generated at the point of the call to Traceable.
+// TraceWrap wraps an error within a stacktrace and returns the new error.
+//   - The stacktrace is generated at the point of the call to TraceWrap.
 //   - The message is formatted using fmt.Sprintf. The error returned
-//     by Traceable implements the Error and Unwrap interfaces.
-//   - If the error is nil, Traceable returns nil.
+//     by TraceWrap implements the Error and Unwrap interfaces.
+//   - If the error is nil, TraceWrap returns nil.
 //
-// Traceable errors are intended to be used for debugging and should only be
+// TraceWrap errors are intended to be used for debugging and should only be
 // viewed by developers. They should _generally_ not be returned to the users
 // of your application.
 //
-// To use a Traceable error, you can use the TraceString function to get a
+// To use a TraceWrap error, you can use the TraceString function to get a
 // printable string of the stacktrace.
 //
 // Example:
@@ -30,17 +30,23 @@ func IsTraceable(err error) bool {
 //	func doSomething(v string) error {
 //	  err := doSomethingElse()
 //	  if err != nil {
-//	    return errtrace.Traceable(err, "failed to do something with %s", v)
+//	    return errtrace.TraceWrap(err, "failed to do something with %s", v)
 //	  }
 //
 //	  return nil
 //	}
-func Traceable(err error, s string, args ...any) error {
+func TraceWrap(err error, msg string, args ...any) error {
 	if err == nil {
 		return nil
 	}
 
-	return newTraceable(err, s, args...)
+	return newTraceable(err, msg, args...)
+}
+
+// Trace creates a new error with a stacktrace and returns the new error.
+// Use this like you would errors.New. For wrapping errors use TraceWrap.
+func Trace(msg string, args ...any) error {
+	return newTraceable(nil, msg, args...)
 }
 
 func newTraceable(cause error, msg string, args ...any) error {

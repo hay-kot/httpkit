@@ -2,6 +2,7 @@ package errtrace
 
 import (
 	"errors"
+	"regexp"
 	"testing"
 )
 
@@ -28,16 +29,18 @@ func TestAnnotate_ErrorArg(t *testing.T) {
 			},
 		},
 		wantErr: true,
-		wantStr: "annotate_test.go:34 TestAnnotate_ErrorArg: prefix: wrapped error text",
+		wantStr: ".*annotate_test.go:35 TestAnnotate_ErrorArg: prefix: wrapped error text",
 	}
 
-	err := Annotate(test.args.s, test.args.args...)
+	err := Annotatef(test.args.s, test.args.args...)
 	if (err != nil) != test.wantErr {
 		t.Errorf("Annotate() error = %v, wantErr %v", err, test.wantErr)
 		return
 	}
 
-	if err != nil && err.Error() != test.wantStr {
-		t.Errorf("Annotate() error = %v, want %v", err.Error(), test.wantStr)
+	regexp := regexp.MustCompile(test.wantStr)
+	if !regexp.MatchString(err.Error()) {
+		t.Errorf("Annotate() error = %v, wantErr %v", err, test.wantStr)
+		return
 	}
 }

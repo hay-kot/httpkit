@@ -1,9 +1,5 @@
 package errtrace
 
-import "os"
-
-var cwd string
-
 // OverrideCleaner is a function that can be set to override the default path cleaner
 // for the Annotate and Traceable function. The default cleaner removes the current
 // working directory from the file path. Use this to override that behavior, for
@@ -16,18 +12,6 @@ func cleanGoPath(path string) string {
 	// clean full file path to relative path
 	if OverrideCleaner != nil {
 		return OverrideCleaner(path)
-	}
-
-	if cwd == "" {
-		var err error
-		cwd, err = os.Getwd()
-		if err != nil {
-			return path
-		}
-	}
-
-	if len(path) > len(cwd) && path[:len(cwd)] == cwd {
-		return path[len(cwd)+1:]
 	}
 
 	return path

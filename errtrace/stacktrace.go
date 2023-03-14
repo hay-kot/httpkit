@@ -28,7 +28,7 @@ func bold(s string) string { return "\033[1m" + s + "\033[0m" }
 func stringer(err error) string {
 	str := strings.Builder{}
 	lastWasTraceable := false
-	const indent = "  "
+	const indent = "    "
 
 	for {
 		if err == nil {
@@ -59,18 +59,19 @@ func stringer(err error) string {
 		lastWasTraceable = true
 
 		str.WriteString(red(bold(("trace error: "))))
-		str.WriteRune('\n')
-		str.WriteString(indent)
+
 		str.WriteString(traceable.message)
 		str.WriteRune('\n')
 
+		// File and line numbers
 		str.WriteString(indent)
-		str.WriteString("\033[4m")
 		str.WriteString(traceable.file)
 		str.WriteRune(':')
 		str.WriteString(fmt.Sprintf("%d", traceable.line))
-		str.WriteString("\033[0m")
 
+		// Function
+		str.WriteRune('\n')
+		str.WriteString(indent)
 		str.WriteString(indent)
 		str.WriteString(traceable.function)
 		str.WriteString("()")
@@ -79,11 +80,12 @@ func stringer(err error) string {
 			str.WriteString(" -> ")
 			str.WriteString(traceable.cause.Error())
 			str.WriteRune('\n')
-			err = traceable.cause
 		}
+
+		err = traceable.cause
 	}
 
-	return str.String()[:str.Len()-1] // remove last newline
+	return str.String()
 }
 
 func (st *stacktrace) String() string {
