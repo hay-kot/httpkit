@@ -76,7 +76,15 @@ func (s *Server) Shutdown(sig string) error {
 	return nil
 }
 
+func (s *Server) StartTLS(m *http.ServeMux, certFile, keyFile string) error {
+	return s.start(m, certFile, keyFile)
+}
+
 func (s *Server) Start(m *http.ServeMux) error {
+	return s.start(m, "", "")
+}
+
+func (s *Server) start(m *http.ServeMux, certFile, keyFile string) error {
 	if s.started {
 		return ErrServerAlreadyStarted
 	}
@@ -115,7 +123,15 @@ func (s *Server) Start(m *http.ServeMux) error {
 	}()
 
 	s.started = true
-	err := s.activeServer.ListenAndServe()
+
+	var err error
+
+	switch {
+	case certFile != "" && keyFile != "":
+		err = s.activeServer.ListenAndServeTLS(certFile, keyFile)
+	default:
+		err = s.activeServer.ListenAndServe()
+	}
 
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
