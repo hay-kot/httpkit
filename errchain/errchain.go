@@ -82,6 +82,11 @@ func (b *ErrChain) ToHandler(h Handler, mw ...Middleware) http.Handler {
 	return b.errorHandler(h)
 }
 
+// ToHandlerFunc does the same thing as ToHandler except that it returns a http.HandlerFunc.
+func (b *ErrChain) ToHandlerFunc(h HandlerFunc, mw ...Middleware) http.HandlerFunc {
+	return b.ToHandler(h, mw...).ServeHTTP
+}
+
 // wrapMiddleware creates a new handler by wrapping middleware around a final
 // handler. The middlewares' Handlers will be executed by requests in the order
 // they are provided.
