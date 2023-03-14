@@ -76,15 +76,15 @@ func (s *Server) Shutdown(sig string) error {
 	return nil
 }
 
-func (s *Server) StartTLS(m *http.ServeMux, certFile, keyFile string) error {
+func (s *Server) StartTLS(m http.Handler, certFile, keyFile string) error {
 	return s.start(m, certFile, keyFile)
 }
 
-func (s *Server) Start(m *http.ServeMux) error {
+func (s *Server) Start(m http.Handler) error {
 	return s.start(m, "", "")
 }
 
-func (s *Server) start(m *http.ServeMux, certFile, keyFile string) error {
+func (s *Server) start(m http.Handler, certFile, keyFile string) error {
 	if s.started {
 		return ErrServerAlreadyStarted
 	}
