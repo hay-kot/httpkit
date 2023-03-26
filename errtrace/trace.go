@@ -44,9 +44,18 @@ func TraceWrap(err error, msg string, args ...any) error {
 }
 
 // Trace creates a new error with a stacktrace and returns the new error.
-// Use this like you would errors.New. For wrapping errors use TraceWrap.
+// Use this like you would fmt.Errorf. For wrapping errors use TraceWrap.
 func Trace(msg string, args ...any) error {
 	return newTraceable(nil, msg, args...)
+}
+
+// MakeTraceable wraps an error within a stacktrace and returns the new error.
+func MakeTraceable(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return newTraceable(err, err.Error())
 }
 
 func newTraceable(cause error, msg string, args ...any) error {
