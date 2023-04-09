@@ -92,12 +92,14 @@ func (st *stacktrace) String() string {
 	return stringer(st)
 }
 
+// StackTraceData contains the data of a stacktrace. It is returned by TraceData.
+// It is not meant to be used directly, but rather to be used by other packages.
 type StackTraceData struct {
-	Message  string
-	File     string
-	Function string
-	Line     int
-	Cause    error
+	Message  string // The message of the error
+	File     string // The file of the caller of the Traceable function
+	Function string // The function of the caller of the Traceable function
+	Line     int    // The line number of the caller of the Traceable function
+	Cause    error  // The underlying error wrapped by the Traceable function
 }
 
 // Loc returns a formatted string that contains the file, function and line number of the caller of the Traceable function.
@@ -127,6 +129,7 @@ func TraceData(err error) (*StackTraceData, error) {
 	}, nil
 }
 
+// TraceString returns a string representation of the error and all its causes.
 func TraceString(err error) string {
 	return stringer(err)
 }

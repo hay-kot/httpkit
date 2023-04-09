@@ -6,6 +6,23 @@ import (
 	"runtime"
 )
 
+// Annotate is a lighter version of Traceable and a drop in replacement for errors.New.
+// instead of returning a traceable error it returns a standard error which is prefixed
+// with the file and line number of the caller of Annotate.
+func Annotate(s string) error {
+	pc, file, line, ok := runtime.Caller(1)
+	if !ok {
+		return errors.New(s)
+	}
+
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		return errors.New(s)
+	}
+
+	return fmt.Errorf("%s:%d %s: "+s, cleanGoPath(file), line, trimFuncName(fn.Name()))
+}
+
 // Annotatef is a lighter version of Traceable and a drop in replacement for fmt.Errorf.
 // instead of returning a traceable error it returns a standard error which is prefixed
 // with the file and line number of the caller of Annotatef.
@@ -39,21 +56,4 @@ func Annotatef(s string, args ...any) error {
 	}
 
 	return fmt.Errorf("%s:%d %s: "+s, append([]any{cleanGoPath(file), line, trimFuncName(fn.Name())}, args...)...)
-}
-
-// Annotate is a lighter version of Traceable and a drop in replacement for errors.New.
-// instead of returning a traceable error it returns a standard error which is prefixed
-// with the file and line number of the caller of Annotate.
-func Annotate(s string) error {
-	pc, file, line, ok := runtime.Caller(1)
-	if !ok {
-		return errors.New(s)
-	}
-
-	fn := runtime.FuncForPC(pc)
-	if fn == nil {
-		return errors.New(s)
-	}
-
-	return fmt.Errorf("%s:%d %s: "+s, cleanGoPath(file), line, trimFuncName(fn.Name()))
 }
