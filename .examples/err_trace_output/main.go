@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hay-kot/safeserve/errtrace"
+	"github.com/hay-kot/httpkit/errtrace"
 )
 
 func CreateUser() error {

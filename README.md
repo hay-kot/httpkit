@@ -1,6 +1,6 @@
-# SafeServe
+# HttpKit
 
-A tiny HTTP server framework for Go. This module is a collection of packages that provide an opinionated approach to building HTTP servers in Go while still allowing you to use your favorite router mux, and middleware.
+A tiny HTTP server toolkit for Go. This module is a collection of packages that provide an opinionated approach to building HTTP servers in Go while still allowing you to use your favorite router mux, and middleware.
 
 ## Packages
 
