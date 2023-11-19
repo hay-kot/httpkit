@@ -14,10 +14,9 @@ func JSON(w http.ResponseWriter, code int, data interface{}) error {
 		return nil
 	}
 
-	// Convert the response value to JSON.
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Set the content type and headers once we know marshaling has succeeded.
