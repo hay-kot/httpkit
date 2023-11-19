@@ -56,7 +56,7 @@ func IsResponseError(err error) bool {
 }
 
 type errorResp struct {
-	StatusCode int               `json:"code,omitempty"`
+	StatusCode int               `json:"statusCode,omitempty"`
 	Error      string            `json:"error"`
 	Context    map[string]string `json:"context,omitempty"`
 }
@@ -90,7 +90,7 @@ func WithContext(ctx map[string]string) ErrorOption {
 // ExampleJSON:
 //
 //		{
-//		  "error": "invalid request body"
+//		 "error": "invalid request body"
 //	   "statusCode": 400
 //		}
 func Error(w http.ResponseWriter, code int, msg string, fns ...ErrorOption) error {
