@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -28,18 +29,18 @@ func Err(err error) *ErrorBuilder {
 // if not set, it will be omitted from response
 func Error() *ErrorBuilder {
 	return &ErrorBuilder{
-		err:  errors.New("unknown error"),
-		msg:  "",
-		code: http.StatusInternalServerError,
-		data: nil,
+		err:    errors.New("unknown error"),
+		msg:    "",
+		status: http.StatusInternalServerError,
+		data:   nil,
 	}
 }
 
 type ErrorBuilder struct {
-	err  error
-	msg  string
-	code int
-	data any
+	err    error
+	msg    string
+	status int
+	data   any
 }
 
 // Err sets the error value that will be embedded into the resulting ResponseError
@@ -50,6 +51,14 @@ func (b *ErrorBuilder) Err(err error) *ErrorBuilder {
 	return b
 }
 
+// Errf is the same as Err, but allows you to provide a format string and arguments
+// that will be used to create a new error. This calls fmt.Errorf(format, args...)
+// to create the error.
+func (b *ErrorBuilder) Errf(format string, args ...any) *ErrorBuilder {
+	b.err = fmt.Errorf(format, args...)
+	return b
+}
+
 // Msg sets the message that will be used in the response. If no message is provided,
 // the error.Err() value will be used as the message.
 func (b *ErrorBuilder) Msg(msg string) *ErrorBuilder {
@@ -57,10 +66,26 @@ func (b *ErrorBuilder) Msg(msg string) *ErrorBuilder {
 	return b
 }
 
+// Msgf is the same as Msg, but allows you to provide a format string and arguments
+// that will be used to create the message. This calls fmt.Sprintf(format, args...)
+// to create the message.
+func (b *ErrorBuilder) Msgf(format string, args ...any) *ErrorBuilder {
+	b.msg = fmt.Sprintf(format, args...)
+	return b
+}
+
 // Code sets the HTTP status code that will be used in the response. If no code is
 // provided, http.StatusInternalServerError will be used.
+//
+// Deprecated: Use Status instead.
 func (b *ErrorBuilder) Code(code int) *ErrorBuilder {
-	b.code = code
+	return b.Status(code)
+}
+
+// Status sets the HTTP status code that will be used in the response. If no code is
+// provided, http.StatusInternalServerError will be used.
+func (b *ErrorBuilder) Status(status int) *ErrorBuilder {
+	b.status = status
 	return b
 }
 
@@ -89,7 +114,9 @@ func (b *ErrorBuilder) responseMsg() string {
 	return b.msg
 }
 
-type errorResp struct {
+// ErrorResp is the JSON response body for an error response. It contains the
+// message, status code, request ID, and optional data.
+type ErrorResp struct {
 	Message    string `json:"message"`
 	StatusCode int    `json:"statusCode"`
 	RequestID  string `json:"requestId,omitempty"`
@@ -101,14 +128,14 @@ type errorResp struct {
 // a type of server.ResponseError that can be if you are using an error middleware
 // that logs errors.
 func (b *ErrorBuilder) Write(ctx context.Context, w http.ResponseWriter) error {
-	body := errorResp{
+	body := ErrorResp{
 		Message:    b.responseMsg(),
-		StatusCode: b.code,
+		StatusCode: b.status,
 		RequestID:  requestIDFunc(ctx),
 		Data:       b.data,
 	}
 
-	err := JSON(w, b.code, body)
+	err := JSON(w, b.status, body)
 	if err != nil {
 		return err
 	}
