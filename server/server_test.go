@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -100,6 +101,14 @@ func Test_GracefulServerShutdownWithWorkers(t *testing.T) {
 		finishedChannel <- "worker finished"
 	})
 
+	var backgroundServiceFinished bool
+
+	svr.BackgroundContext(func(ctx context.Context) {
+		<-ctx.Done()
+
+		backgroundServiceFinished = true
+	})
+
 	// Shutdown the server
 	var wg sync.WaitGroup
 	var err error
@@ -119,6 +128,7 @@ func Test_GracefulServerShutdownWithWorkers(t *testing.T) {
 	result := <-finishedChannel
 
 	assert.Equal(t, "worker finished", result)
+	assert.True(t, backgroundServiceFinished)
 }
 
 func Test_GracefulServerShutdownWithRequests(t *testing.T) {
