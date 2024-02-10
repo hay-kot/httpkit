@@ -155,7 +155,7 @@ func (s *Server) Background(task func()) {
 		// Recover from panic and log the error
 		defer func() {
 			if r := recover(); r != nil {
-				s.println("Recovered from panic: ", r)
+				s.println("recovered from panic: ", r)
 			}
 		}()
 
