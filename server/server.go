@@ -32,6 +32,9 @@ type Server struct {
 	readTimeout  time.Duration
 	writeTimeout time.Duration
 	println      func(...any)
+
+	jobctx    context.Context // context for background jobs
+	cancelctx context.CancelFunc
 }
 
 func NewServer(opts ...Option) *Server {
@@ -43,6 +46,8 @@ func NewServer(opts ...Option) *Server {
 		writeTimeout: 10 * time.Second,
 		println:      func(a ...any) { fmt.Println(a...) },
 	}
+
+	s.jobctx, s.cancelctx = context.WithCancel(context.Background())
 
 	for _, opt := range opts {
 		err := opt(s)
@@ -59,6 +64,9 @@ func (s *Server) Shutdown(sig string) error {
 		return ErrServerNotStarted
 	}
 	s.println(fmt.Sprintf("Received %s signal, shutting down\n", sig))
+
+	// signal cancellation to all background jobs
+	s.cancelctx()
 
 	// Create a context with a 5-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -149,6 +157,9 @@ func (s *Server) start(m http.Handler, certFile, keyFile string) error {
 // Background starts a go routine that runs on the servers pool. In the event of a shutdown
 // request, the server will wait until all open goroutines have finished before shutting down.
 // This method will also gracefully handle panics and log the error.
+//
+// Note that in most cases, you should use BackgroundContext instead of Background. Background
+// is only useful for short-lived tasks.
 func (s *Server) Background(task func()) {
 	s.wg.Add(1)
 	go func() {
@@ -161,5 +172,27 @@ func (s *Server) Background(task func()) {
 
 		defer s.wg.Done()
 		task()
+	}()
+}
+
+// BackgroundContext starts a go routine that runs on the servers pool. In the event of a shutdown
+// request, the server will wait until all open goroutines have finished before shutting down.
+// or the timeout of 5 seconds is reached. The context passed to the task will be cancelled when
+// the server has started its shutdown process.
+//
+// This method will also gracefully handle panics and log the error.
+func (s *Server) BackgroundContext(task func(ctx context.Context)) {
+	s.wg.Add(1)
+
+	go func() {
+		// Recover from panic and log the error
+		defer func() {
+			if r := recover(); r != nil {
+				s.println("recovered from panic: ", r)
+			}
+		}()
+		defer s.wg.Done()
+
+		task(s.jobctx)
 	}()
 }
