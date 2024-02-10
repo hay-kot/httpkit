@@ -63,7 +63,7 @@ func Test_ServerStarts_Error(t *testing.T) {
 	svr := testServer(t, nil)
 
 	err := svr.Start(http.NewServeMux())
-	assert.ErrorIs(t, err, ErrServerAlreadyStarted)
+	require.ErrorIs(t, err, ErrServerAlreadyStarted)
 
 	err = svr.Shutdown("test")
 	require.NoError(t, err)
