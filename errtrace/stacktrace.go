@@ -115,8 +115,9 @@ func TraceData(err error) (*StackTraceData, error) {
 		return nil, errors.New("error is not traceable")
 	}
 
-	trace := unwrapToTraceable(err)
-	if trace == nil {
+	trace := &stacktrace{}
+	ok := errors.As(err, &trace)
+	if !ok {
 		return nil, errors.New("error is not traceable")
 	}
 
@@ -132,4 +133,44 @@ func TraceData(err error) (*StackTraceData, error) {
 // TraceString returns a string representation of the error and all its causes.
 func TraceString(err error) string {
 	return stringer(err)
+}
+
+// frame is used purely for marshalling the stacktrace to JSON.
+// for the MarshalStack function.
+type frame struct {
+	Error    string `json:"error,omitempty"`
+	Source   string `json:"source,omitempty"`
+	Line     int    `json:"line,omitempty"`
+	Function string `json:"func,omitempty"`
+}
+
+// MarshalStack implements a custom JSON marshaller for errors that are traceable.
+// This was implemented for use within github.com/rs/zerolog package.
+func MarshalStack(err error) any {
+	var frames []frame
+
+	for err != nil {
+		traceable, ok := err.(*stacktrace) //nolint:errorlint
+		if ok {
+			frames = append(frames, frame{
+				Error:    traceable.message,
+				Source:   traceable.file,
+				Line:     traceable.line,
+				Function: traceable.function,
+			})
+		} else {
+			// append the error for context
+			frames = append(frames, frame{Error: err.Error()})
+		}
+
+		unwrapped := errors.Unwrap(err)
+		if unwrapped == nil {
+			break
+		}
+
+		err = unwrapped
+		continue
+	}
+
+	return frames
 }

@@ -99,25 +99,3 @@ func newTraceable(cause error, msg string, args ...any) error {
 
 	return err
 }
-
-// unwrapToTraceable unwraps the error and returns the first error that is a
-// (*stacktrace). If no *stacktrace is found, nil is returned.
-func unwrapToTraceable(err error) *stacktrace {
-	for {
-		if err == nil {
-			return nil
-		}
-
-		traceable, ok := err.(*stacktrace) //nolint:errorlint
-		if !ok {
-			maybeErr := errors.Unwrap(err)
-			if maybeErr == nil {
-				return nil
-			}
-			err = maybeErr
-			continue
-		}
-
-		return traceable
-	}
-}
