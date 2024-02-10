@@ -115,8 +115,9 @@ func TraceData(err error) (*StackTraceData, error) {
 		return nil, errors.New("error is not traceable")
 	}
 
-	trace := unwrapToTraceable(err)
-	if trace == nil {
+	trace := &stacktrace{}
+	ok := errors.As(err, &trace)
+	if !ok {
 		return nil, errors.New("error is not traceable")
 	}
 
