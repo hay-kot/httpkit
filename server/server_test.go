@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -33,8 +34,7 @@ func testServer(t *testing.T, r http.Handler) *Server {
 		mux.Handle("/", r)
 	}
 	go func() {
-		err := svr.Start(mux)
-		assert.NoError(t, err)
+		_ = svr.Start(mux)
 	}()
 
 	ping := func() error {
@@ -66,13 +66,13 @@ func Test_ServerStarts_Error(t *testing.T) {
 	assert.ErrorIs(t, err, ErrServerAlreadyStarted)
 
 	err = svr.Shutdown("test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func Test_ServerStarts(t *testing.T) {
 	svr := testServer(t, nil)
 	err := svr.Shutdown("test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func Test_GracefulServerShutdownWithWorkers(t *testing.T) {
@@ -99,11 +99,11 @@ func Test_GracefulServerShutdownWithWorkers(t *testing.T) {
 		err = svr.Shutdown("test")
 	}()
 
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	close(blockingChannel)
 
 	wg.Wait()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result := <-finishedChannel
 
@@ -148,11 +148,11 @@ func Test_GracefulServerShutdownWithRequests(t *testing.T) {
 		err = svr.Shutdown("test")
 	}()
 
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	close(blockingChannel)
 
 	wg.Wait()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	close(finishedChannel)
 	result := <-finishedChannel
