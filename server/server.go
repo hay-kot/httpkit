@@ -148,9 +148,17 @@ func (s *Server) start(m http.Handler, certFile, keyFile string) error {
 
 // Background starts a go routine that runs on the servers pool. In the event of a shutdown
 // request, the server will wait until all open goroutines have finished before shutting down.
+// This method will also gracefully handle panics and log the error.
 func (s *Server) Background(task func()) {
 	s.wg.Add(1)
 	go func() {
+		// Recover from panic and log the error
+		defer func() {
+			if r := recover(); r != nil {
+				s.println("recovered from panic: ", r)
+			}
+		}()
+
 		defer s.wg.Done()
 		task()
 	}()

@@ -75,6 +75,17 @@ func Test_ServerStarts(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func Test_Server_BackgroundRecovers(t *testing.T) {
+	svr := testServer(t, nil)
+
+	svr.Background(func() {
+		panic("test")
+	})
+
+	err := svr.Shutdown("test")
+	require.NoError(t, err)
+}
+
 func Test_GracefulServerShutdownWithWorkers(t *testing.T) {
 	blockingChannel := make(chan struct{})
 	finishedChannel := make(chan string, 1)
