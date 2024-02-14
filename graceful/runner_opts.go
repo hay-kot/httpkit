@@ -11,7 +11,7 @@ type runnerOpts struct {
 	println func(...any)
 }
 
-type ServerV2Option func(*runnerOpts)
+type RunnerOptFunc func(*runnerOpts)
 
 // WithSignals provides a list of signals to listen for
 // when starting the server that will cancel the context
@@ -21,7 +21,7 @@ type ServerV2Option func(*runnerOpts)
 //   - syscall.SIGTERM
 //
 // Multiple calls to this option will override the previous
-func WithSignals(signals ...os.Signal) ServerV2Option {
+func WithSignals(signals ...os.Signal) RunnerOptFunc {
 	return func(o *runnerOpts) {
 		o.signals = signals
 	}
@@ -31,14 +31,14 @@ func WithSignals(signals ...os.Signal) ServerV2Option {
 // plugins to stop before shutting down.
 //
 // Defaults to 5 seconds
-func WithTimeout(timeout time.Duration) ServerV2Option {
+func WithTimeout(timeout time.Duration) RunnerOptFunc {
 	return func(o *runnerOpts) {
 		o.timeout = timeout
 	}
 }
 
 // WithPrintln provides a function to print messages
-func WithPrintln(fn func(...any)) ServerV2Option {
+func WithPrintln(fn func(...any)) RunnerOptFunc {
 	return func(o *runnerOpts) {
 		o.println = fn
 	}

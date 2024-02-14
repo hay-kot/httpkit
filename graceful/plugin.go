@@ -2,6 +2,10 @@ package graceful
 
 import "context"
 
+// Plugin defines the interface for a plugin that can be started and stopped via the
+// Runner. The plugin should be blocking until the context is cancelled. Note that startup
+// order for plugins is non-deterministic and should not be relied upon. If you need to
+// will need to manage coordination between plugins.
 type Plugin interface {
 	// Name returns the name of the plugin. This can be any identifier you like and
 	// will only be used for logging and debugging purposes.

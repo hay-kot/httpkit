@@ -24,7 +24,7 @@ type Runner struct {
 	opts     *runnerOpts
 }
 
-func NewRunner(opts ...ServerV2Option) *Runner {
+func NewRunner(opts ...RunnerOptFunc) *Runner {
 	o := &runnerOpts{
 		signals: []os.Signal{os.Interrupt, syscall.SIGTERM},
 		timeout: 5 * time.Second,
@@ -67,9 +67,9 @@ func (svr *Runner) Start(ctx context.Context) error {
 
 	// Start Plugins
 	var (
-		wg        = sync.WaitGroup{}
-		pluginErr = make(chan error)
-		wgChannel = make(chan struct{})
+		wg          = sync.WaitGroup{}
+		pluginErrCh = make(chan error)
+		wgChannel   = make(chan struct{})
 	)
 
 	wg.Add(len(svr.plugins))
@@ -79,7 +79,11 @@ func (svr *Runner) Start(ctx context.Context) error {
 		close(wgChannel)
 	}()
 
+	var plugErr error
 	for _, p := range svr.plugins {
+		if plugErr != nil {
+			break
+		}
 		go func(p Plugin) {
 			defer func() {
 				wg.Done()
@@ -87,7 +91,8 @@ func (svr *Runner) Start(ctx context.Context) error {
 
 			err := p.Start(ctx)
 			if err != nil {
-				pluginErr <- err
+				plugErr = err
+				pluginErrCh <- err
 			}
 		}(p)
 	}
@@ -117,7 +122,7 @@ func (svr *Runner) Start(ctx context.Context) error {
 			svr.opts.println("timeout waiting for plugins to stop, shutting down")
 			return context.DeadlineExceeded
 		}
-	case err := <-pluginErr:
+	case err := <-pluginErrCh:
 		svr.opts.println("plugin error:", err)
 		return err
 	}
