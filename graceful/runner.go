@@ -92,7 +92,13 @@ func (svr *Runner) Start(ctx context.Context) error {
 			err := p.Start(ctx)
 			if err != nil {
 				plugErr = err
-				pluginErrCh <- err
+
+        // safely write to the channel
+        // if the channel is full, we don't want to block
+				select {
+				case pluginErrCh <- err:
+				default:
+				}
 			}
 		}(p)
 	}
