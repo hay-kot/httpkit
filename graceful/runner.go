@@ -50,6 +50,21 @@ func (svr *Runner) AddPlugin(p ...Plugin) {
 	svr.plugins = append(svr.plugins, p...)
 }
 
+// AddFunc adds a function as a plugin to the server during construction. This is
+// useful for quick plugin creation and for passing structs that only provide
+// the Start method.
+//
+// Example:
+//   svr.AddFunc("my-plugin", func(ctx context.Context) error {
+//     // do something
+//     <-ctx.Done()
+//     // cleanup / logging
+//     return nil
+//   }
+func (svr *Runner) AddFunc(name string, fn func(ctx context.Context) error) {
+	svr.plugins = append(svr.plugins, PluginFunc(name, fn))
+}
+
 // Start start the server with a context provided for cancellation
 // if the root context is cancelled, the server signal stops to all
 // plugins registered.
