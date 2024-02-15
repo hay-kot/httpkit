@@ -1,12 +1,10 @@
-package server_test
+package server
 
 import (
 	"context"
 	"errors"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/hay-kot/httpkit/server"
 )
 
 type unwrapable interface {
@@ -22,10 +20,18 @@ func unwrap(err error) error {
 	return asUnwrapable.Unwrap()
 }
 
+// UnsetRequestIDFunc sets the request ID function to return an empty string.
+// This is useful for testing.
+func unsetRequestIDFunc() {
+	requestIDFunc = func(ctx context.Context) string {
+		return ""
+	}
+}
+
 func Test_ErrorBuilder(t *testing.T) {
 	type tcase struct {
 		name       string
-		builder    *server.ErrorBuilder
+		builder    *ErrorBuilder
 		wantErr    error
 		expectJSON string
 		hook       func(context.Context) context.Context
@@ -34,13 +40,13 @@ func Test_ErrorBuilder(t *testing.T) {
 	cases := []tcase{
 		{
 			name:       "default error",
-			builder:    server.Error(),
+			builder:    Error(),
 			wantErr:    errors.New("unknown error"),
 			expectJSON: `{"message":"unknown error","statusCode":500}`,
 		},
 		{
 			name: "message overrides error",
-			builder: server.Error().
+			builder: Error().
 				Err(errors.New("test error")).
 				Msg("test message"),
 			wantErr:    errors.New("unknown error"),
@@ -48,7 +54,7 @@ func Test_ErrorBuilder(t *testing.T) {
 		},
 		{
 			name: "data is included",
-			builder: server.Error().
+			builder: Error().
 				Err(errors.New("test error")).
 				Msg("test message").
 				Data(map[string]string{"foo": "bar"}),
@@ -57,7 +63,7 @@ func Test_ErrorBuilder(t *testing.T) {
 		},
 		{
 			name:       "with request ID",
-			builder:    server.Error(),
+			builder:    Error(),
 			wantErr:    errors.New("unknown error"),
 			expectJSON: `{"message":"unknown error","statusCode":500,"requestId":"test-request-id"}`,
 			hook: func(ctx context.Context) context.Context {
@@ -69,7 +75,7 @@ func Test_ErrorBuilder(t *testing.T) {
 					return ctx.Value(requestIDKey).(string)
 				}
 
-				server.SetRequestIDFunc(fn)
+				SetRequestIDFunc(fn)
 
 				return context.WithValue(ctx, requestIDKey, "test-request-id")
 			},
@@ -78,6 +84,7 @@ func Test_ErrorBuilder(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			defer unsetRequestIDFunc()
 			bg := context.Background()
 			if c.hook != nil {
 				bg = c.hook(bg)
