@@ -15,6 +15,72 @@ var TestErrHandler = func(h Handler) http.Handler {
 	})
 }
 
+func Test_Router_PathConstruction(t *testing.T) {
+	tests := []struct {
+		name   string
+		path   string
+		prefix string
+		expect string
+	}{
+		{
+			name:   "no prefix",
+			path:   "/apitest/v1/endpoint",
+			prefix: "",
+			expect: "/apitest/v1/endpoint",
+		},
+		{
+			name:   "with prefix",
+			path:   "/apitest/v1/endpoint",
+			prefix: "/api",
+			expect: "/api/apitest/v1/endpoint",
+		},
+		{
+			name:   "with trailing slash",
+			path:   "/apitest/v1/endpoint/",
+			prefix: "/api/",
+			expect: "/api/apitest/v1/endpoint",
+		},
+		{
+			name:   "with no slash",
+			path:   "apitest/v1/endpoint",
+			prefix: "api",
+			expect: "/api/apitest/v1/endpoint",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := NewRouter(test.prefix, New(TestErrHandler))
+
+			handler := func(w http.ResponseWriter, r *http.Request) error {
+				w.WriteHeader(http.StatusOK)
+				return nil
+			}
+
+			server := httptest.NewServer(r)
+
+			r.MethodFunc(http.MethodGet, test.path, handler)
+
+			client := server.Client()
+
+			req, err := http.NewRequest(http.MethodGet, server.URL+test.expect, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+			}
+		})
+	}
+}
+
 func Test_Router_MethodFunc(t *testing.T) {
 	methods := []string{
 		http.MethodGet,
