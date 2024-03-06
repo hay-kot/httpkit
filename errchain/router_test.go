@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var NilErrHandler = func(h Handler) http.Handler {
+var TestErrHandler = func(h Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := h.ServeHTTP(w, r)
 		if err != nil {
@@ -32,7 +32,7 @@ func Test_Router_applyMethod(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.method+" "+test.path, func(t *testing.T) {
-			r := NewRouter(test.prefix, New(NilErrHandler))
+			r := NewRouter(test.prefix, New(TestErrHandler))
 			got := r.applyMethod(test.method, test.path)
 			if got != test.expect {
 				t.Errorf("expected %q, got %q", test.expect, got)
@@ -63,7 +63,7 @@ func Test_Router_MethodFunc(t *testing.T) {
 
 	for i, method := range methods {
 		t.Run(method, func(t *testing.T) {
-			r := NewRouter("", New(NilErrHandler))
+			r := NewRouter("", New(TestErrHandler))
 			r.MethodFunc(method, path, handler)
 
 			server := httptest.NewServer(r)
