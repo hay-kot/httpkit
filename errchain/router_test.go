@@ -15,32 +15,6 @@ var TestErrHandler = func(h Handler) http.Handler {
 	})
 }
 
-func Test_Router_applyMethod(t *testing.T) {
-	tests := []struct {
-		method string
-		path   string
-		prefix string
-		expect string
-	}{
-		{"GET", "/path", "/", "GET /path"},
-		{"POST", "/path", "", "POST /path"},
-		{"PUT", "/path", "/api/v1", "PUT /api/v1/path"},
-		{"PATCH", "/path/", "/prefix/", "PATCH /prefix/path/"},
-		{"DELETE", "/path/", "/prefix/", "DELETE /prefix/path/"},
-		{"TRACE", "/path/", "prefix", "TRACE /prefix/path/"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.method+" "+test.path, func(t *testing.T) {
-			r := NewRouter(test.prefix, New(TestErrHandler))
-			got := r.applyMethod(test.method, test.path)
-			if got != test.expect {
-				t.Errorf("expected %q, got %q", test.expect, got)
-			}
-		})
-	}
-}
-
 func Test_Router_MethodFunc(t *testing.T) {
 	methods := []string{
 		http.MethodGet,

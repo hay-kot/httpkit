@@ -2,6 +2,11 @@ package errchain
 
 import "net/http"
 
+// RouterHook is a function that can be used to add hooks to the router.
+// this was implemented to allow for the otelhttp.WithRouteTag method to
+// be easily added to the router, but may serve other purposes as well.
+type RouterHook func(pattern string, handler http.Handler) http.Handler
+
 // Router is a simple wrapper around the standard http.ServeMux with it's new
 // improvements in go 1.22. It extends the http.ServeMux with the following
 // features:
@@ -15,6 +20,7 @@ import "net/http"
 // want to use errchain.Handler types you need to use the ErrHandler
 // method to add the handler to the route.
 type Router struct {
+	Hook RouterHook
 	http.ServeMux
 	prefix string
 	chain  *ErrChain
@@ -51,71 +57,70 @@ func NewRouter(prefix string, chain *ErrChain) *Router {
 	return &Router{prefix: prefix, chain: chain}
 }
 
-// applyMethod constructs a applyMethod string from the method and applyMethod. This
-// assumes that r.prefix has a '/' at the beginning and end of
-// the string.
-func (r *Router) applyMethod(method string, path string) string {
-	// If the path does not start with a '/', then add it
+func (r *Router) handle(path string, h Handler, mw ...Middleware) {
+	hdlr := r.chain.ToHandler(h, mw...)
+
+	if r.Hook != nil {
+		hdlr = r.Hook(path, hdlr)
+	}
+
+	r.ServeMux.Handle(path, hdlr)
+}
+
+func (r *Router) ErrHandler(path string, h Handler, mw ...Middleware) {
 	if len(path) > 0 && path[0] != '/' {
 		path = "/" + path
 	}
+	path = r.prefix + path
 
-	return method + " " + r.prefix + path
-}
-
-func (r *Router) applyPrefix(path string) string {
-	// If the path does not start with a '/', then add it
-	if len(path) > 0 && path[0] != '/' {
-		path = "/" + path
-	}
-
-	return r.prefix + path
-}
-
-func (r *Router) ErrHandler(path string, h Handler) {
-	r.ServeMux.Handle(r.applyPrefix(path), r.chain.ToHandler(h))
+	r.handle(path, h)
 }
 
 func (r *Router) Method(method, path string, h Handler, mw ...Middleware) {
-	r.ServeMux.Handle(r.applyMethod(method, path), r.chain.ToHandler(h, mw...))
+	if len(path) > 0 && path[0] != '/' {
+		path = "/" + path
+	}
+	path = method + " " + r.prefix + path
+
+	r.handle(path, h, mw...)
 }
 
-func (r *Router) MethodFunc(method, path string, fn HandlerFunc, mw ...Middleware) {
-	r.ServeMux.Handle(r.applyMethod(method, path), r.chain.ToHandlerFunc(fn, mw...))
+func (r *Router) MethodFunc(method, path string, h HandlerFunc, mw ...Middleware) {
+	r.Method(method, path, h, mw...)
 }
 
 func (r *Router) Get(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodGet, path, fn, mw...)
+	r.Method(http.MethodGet, path, fn, mw...)
 }
 
 func (r *Router) Post(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodPost, path, fn, mw...)
+	r.Method(http.MethodPost, path, fn, mw...)
 }
 
 func (r *Router) Put(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodPut, path, fn, mw...)
+	r.Method(http.MethodPut, path, fn, mw...)
 }
 
 func (r *Router) Patch(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodPatch, path, fn, mw...)
+	r.Method(http.MethodPatch, path, fn, mw...)
 }
 
 func (r *Router) Delete(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodDelete, path, fn, mw...)
+	r.Method(http.MethodDelete, path, fn, mw...)
 }
 
 func (r *Router) Options(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodOptions, path, fn, mw...)
+	r.Method(http.MethodOptions, path, fn, mw...)
 }
 
 func (r *Router) Head(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodHead, path, fn, mw...)
+	r.Method(http.MethodHead, path, fn, mw...)
 }
 
 func (r *Router) Connect(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodConnect, path, fn, mw...)
+	r.Method(http.MethodConnect, path, fn, mw...)
 }
 
 func (r *Router) Trace(path string, fn HandlerFunc, mw ...Middleware) {
-	r.MethodFunc(http.MethodTrace, path, fn, mw...)
+	r.Method(http.MethodTrace, path, fn, mw...)
 }
