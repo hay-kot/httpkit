@@ -103,3 +103,20 @@ func wrapMiddleware(handler Handler, mw []Middleware) Handler {
 
 	return handler
 }
+
+// AdaptMiddleware adapts a http middleware to a errchain middleware.
+// This is useful when you have a http middleware that you want to use with
+// errchain but adheres to the standard middleware signature.
+func AdaptMiddleware(httpMid func(http.Handler) http.Handler) Middleware {
+	return func(h Handler) Handler {
+		return HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+			var err error
+
+			httpMid(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				err = h.ServeHTTP(w, r)
+			})).ServeHTTP(w, r)
+
+			return err
+		})
+	}
+}
