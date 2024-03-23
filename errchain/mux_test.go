@@ -51,7 +51,7 @@ func Test_Router_PathConstruction(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := NewRouter(New(TestErrHandler)).UsePrefix(test.prefix)
+			r := NewMux(New(TestErrHandler)).UsePrefix(test.prefix)
 
 			handler := func(w http.ResponseWriter, r *http.Request) error {
 				w.WriteHeader(http.StatusOK)
@@ -104,7 +104,7 @@ func Test_Router_MethodFunc(t *testing.T) {
 
 	for i, method := range methods {
 		t.Run(method, func(t *testing.T) {
-			r := NewRouter(New(TestErrHandler))
+			r := NewMux(New(TestErrHandler))
 			r.MethodFunc(method, path, handler)
 
 			server := httptest.NewServer(r)
@@ -184,7 +184,7 @@ func Test_Router_MiddlewareOrder(t *testing.T) {
 
 	chain := New(TestErrHandler)
 
-	r := NewRouter(chain)
+	r := NewMux(chain)
 
 	chain.Use(customMiddlewares...)
 	r.Use(stdMiddlewares...)
