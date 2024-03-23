@@ -49,7 +49,7 @@ func Test_wrapMiddleware(t *testing.T) {
 	}
 }
 
-func Test_AdaptMiddleware(T *testing.T) {
+func Test_AdaptMiddleware(t *testing.T) {
 	key := slicekey("AdaptMiddleware")
 
 	httpMid := func(h http.Handler) http.Handler {
@@ -75,11 +75,11 @@ func Test_AdaptMiddleware(T *testing.T) {
 		}
 
 		if len(l) != 1 {
-			T.Errorf("expected 1, got %d", len(l))
+			t.Errorf("expected 1, got %d", len(l))
 		}
 
 		if l[0] != "http mid" {
-			T.Errorf("expected http mid, got %s", l[0])
+			t.Errorf("expected http mid, got %s", l[0])
 		}
 
 		return nil
@@ -92,6 +92,6 @@ func Test_AdaptMiddleware(T *testing.T) {
 
 	err := wrapped.ServeHTTP(writer, request)
 	if err != nil {
-		T.Errorf("expected nil, got %v", err)
+		t.Errorf("expected nil, got %v", err)
 	}
 }
