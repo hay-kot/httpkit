@@ -7,32 +7,12 @@ import (
 	"testing"
 )
 
-type slicekey string
-
-func Test_wrapMiddleware(T *testing.T) {
-	key := slicekey("wrapMiddleware")
-
-	newMid := func(str string) Middleware {
-		return func(h Handler) Handler {
-			return HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
-				l, ok := r.Context().Value(key).([]string)
-				if !ok {
-					l = []string{}
-				}
-
-				l = append(l, str)
-
-				r = r.WithContext(context.WithValue(r.Context(), key, l))
-				return h.ServeHTTP(w, r)
-			})
-		}
-	}
-
+func Test_wrapMiddleware(t *testing.T) {
 	middlewares := []Middleware{
-		newMid("mid 1"),
-		newMid("mid 2"),
-		newMid("mid 3"),
-		newMid("mid 4"),
+		newErrMiddleware("mid 1"),
+		newErrMiddleware("mid 2"),
+		newErrMiddleware("mid 3"),
+		newErrMiddleware("mid 4"),
 	}
 
 	// Expected order of execution
@@ -44,14 +24,14 @@ func Test_wrapMiddleware(T *testing.T) {
 	}
 
 	handler := HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
-		l, ok := r.Context().Value(key).([]string)
+		l, ok := r.Context().Value(slicekeyValue).([]string)
 		if !ok {
 			l = []string{}
 		}
 
 		for i, v := range l {
 			if v != expected[i] {
-				T.Errorf("expected %s, got %s", expected[i], v)
+				t.Errorf("expected %s, got %s", expected[i], v)
 			}
 		}
 
@@ -65,7 +45,7 @@ func Test_wrapMiddleware(T *testing.T) {
 
 	err := wrapped.ServeHTTP(writer, request)
 	if err != nil {
-		T.Errorf("expected nil, got %v", err)
+		t.Errorf("expected nil, got %v", err)
 	}
 }
 
