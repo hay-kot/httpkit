@@ -40,4 +40,3 @@ func newStdMiddleware(str string) func(http.Handler) http.Handler {
 		})
 	}
 }
-

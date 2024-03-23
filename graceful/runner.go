@@ -55,12 +55,13 @@ func (svr *Runner) AddPlugin(p ...Plugin) {
 // the Start method.
 //
 // Example:
-//   svr.AddFunc("my-plugin", func(ctx context.Context) error {
-//     // do something
-//     <-ctx.Done()
-//     // cleanup / logging
-//     return nil
-//   }
+//
+//	svr.AddFunc("my-plugin", func(ctx context.Context) error {
+//	  // do something
+//	  <-ctx.Done()
+//	  // cleanup / logging
+//	  return nil
+//	}
 func (svr *Runner) AddFunc(name string, fn func(ctx context.Context) error) {
 	svr.plugins = append(svr.plugins, PluginFunc(name, fn))
 }
