@@ -42,11 +42,37 @@ type Router struct {
 // it is left as is.
 //
 // If chain is nil, this function will panic.
-func NewRouter(prefix string, chain *ErrChain) *Router {
+func NewRouter(chain *ErrChain) *Router {
 	if chain == nil {
 		panic("errchain: ErrChain is nil")
 	}
 
+	return &Router{chain: chain}
+}
+
+func (r *Router) handle(path string, h Handler, mw ...Middleware) {
+	hdlr := r.chain.ToHandler(h, mw...)
+
+	if len(r.mw) > 0 {
+		for i := len(r.mw) - 1; i >= 0; i-- {
+			hdlr = r.mw[i](hdlr)
+		}
+	}
+
+	if r.Hook != nil {
+		hdlr = r.Hook(path, hdlr)
+	}
+
+	r.ServeMux.Handle(path, hdlr)
+}
+
+// UsePrefix sets the prefix for the router. This prefix will be prepended to all
+//
+// Example:
+//
+//	router := errchain.New(chain)
+//	router = router.UsePrefix("/api")
+func (r *Router) UsePrefix(prefix string) *Router {
 	// preprocess the prefix to ensure it starts and ends with a '/'
 	if prefix == "/" {
 		prefix = ""
@@ -64,23 +90,8 @@ func NewRouter(prefix string, chain *ErrChain) *Router {
 		}
 	}
 
-	return &Router{prefix: prefix, chain: chain}
-}
-
-func (r *Router) handle(path string, h Handler, mw ...Middleware) {
-	hdlr := r.chain.ToHandler(h, mw...)
-
-	if len(r.mw) > 0 {
-		for i := len(r.mw) - 1; i >= 0; i-- {
-			hdlr = r.mw[i](hdlr)
-		}
-	}
-
-	if r.Hook != nil {
-		hdlr = r.Hook(path, hdlr)
-	}
-
-	r.ServeMux.Handle(path, hdlr)
+	r.prefix = prefix
+	return r
 }
 
 // Use adds middleware to the router. This middleware will be applied to all
