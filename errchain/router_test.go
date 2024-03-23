@@ -3,6 +3,7 @@ package errchain
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -153,4 +154,77 @@ func Test_Router_MethodFunc(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_Router_MiddlewareOrder(t *testing.T) {
+	stdMiddlewares := []func(http.Handler) http.Handler{
+		newStdMiddleware("mid 1"),
+		newStdMiddleware("mid 2"),
+	}
+
+	customMiddlewares := []Middleware{
+		newErrMiddleware("err mid 1"),
+		newErrMiddleware("err mid 2"),
+	}
+
+	handlerMiddleware := []Middleware{
+		newErrMiddleware("handler 1"),
+		newErrMiddleware("handler 2"),
+	}
+
+	// Expected order of execution
+	expected := []string{
+		"mid 1",
+		"mid 2",
+		"err mid 1",
+		"err mid 2",
+		"handler 1",
+		"handler 2",
+	}
+
+	chain := New(TestErrHandler)
+
+	r := NewRouter("", chain)
+
+	chain.Use(customMiddlewares...)
+	r.Use(stdMiddlewares...)
+
+	handler := HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+		l, ok := r.Context().Value(slicekeyValue).([]string)
+		if !ok {
+			l = []string{}
+		}
+
+		var failed bool
+		for i, v := range l {
+			if v != expected[i] {
+				t.Errorf("expected %s, got %s", expected[i], v)
+				failed = true
+			}
+		}
+
+		if failed {
+			t.Logf("expected: [%v]", strings.Join(expected, ", "))
+			t.Logf("got:      [%v]", strings.Join(l, ", "))
+		}
+
+		return nil
+	})
+
+	r.Get("/test", handler, handlerMiddleware...)
+
+	svr := httptest.NewServer(r)
+
+	// Make a request to the server
+	req, err := http.NewRequest(http.MethodGet, svr.URL+"/test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := svr.Client()
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
 }
