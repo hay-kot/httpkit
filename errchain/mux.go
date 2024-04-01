@@ -2,6 +2,24 @@ package errchain
 
 import "net/http"
 
+// Router is an interface that defines the contract required for the internal implementation
+// of the Mux type. The Mux type is a wrapper around whatever implementation of the Router
+// interface is provided. This allows for the Mux type to be used as a drop-in replacement for
+// the http.ServeMux or any other implementation of the Router interface.
+//
+// Note that the Router _MUST_ implement the new method in go 1.22 for adding handlers to the
+// mux.
+//
+// Example:
+//
+//	"GET /path"
+//
+// If this is not supported, it will have unexpected behavior and may not work at all.
+type Router interface {
+	http.Handler
+	Handle(path string, h http.Handler)
+}
+
 // HandlerHook is a function that can be used to add hooks to the mux.
 // this was implemented to allow for the otelhttp.WithRouteTag method to
 // be easily added to the mux, but may serve other purposes as well.
@@ -20,8 +38,8 @@ type HandlerHook func(pattern string, handler http.Handler) http.Handler
 // want to use errchain.Handler types you need to use the ErrHandler
 // method to add the handler to the route.
 type Mux struct {
-	mw []func(http.Handler) http.Handler
-	http.ServeMux
+	mw     []func(http.Handler) http.Handler
+	mux    Router
 	prefix string
 	chain  *ErrChain
 
@@ -47,7 +65,14 @@ func NewMux(chain *ErrChain) *Mux {
 		panic("errchain: ErrChain is nil")
 	}
 
-	return &Mux{chain: chain}
+	return &Mux{
+		chain: chain,
+		mux:   http.NewServeMux(),
+	}
+}
+
+func (r *Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.mux.ServeHTTP(w, req)
 }
 
 func (r *Mux) handle(path string, h Handler, mw ...Middleware) {
@@ -63,7 +88,15 @@ func (r *Mux) handle(path string, h Handler, mw ...Middleware) {
 		hdlr = r.Hook(path, hdlr)
 	}
 
-	r.ServeMux.Handle(path, hdlr)
+	r.mux.Handle(path, hdlr)
+}
+
+// UseRouter sets the internal router for the mux. This overrides the
+// default http.ServeMux with the provided router. You should call 
+// this method before adding any routes to the mux.
+func (r *Mux) UseRouter(router Router) *Mux {
+	r.mux = router
+	return r
 }
 
 // UsePrefix sets the prefix for the Mux. This prefix will be prepended to all
