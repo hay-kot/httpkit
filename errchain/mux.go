@@ -92,7 +92,7 @@ func (r *Mux) handle(path string, h Handler, mw ...Middleware) {
 }
 
 // UseRouter sets the internal router for the mux. This overrides the
-// default http.ServeMux with the provided router. You should call 
+// default http.ServeMux with the provided router. You should call
 // this method before adding any routes to the mux.
 func (r *Mux) UseRouter(router Router) *Mux {
 	r.mux = router
