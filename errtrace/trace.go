@@ -27,6 +27,7 @@ func New(msg string, args ...any) error {
 }
 
 // TraceWrap is the same as Trace, but it wraps an existing error.
+//
 // Deprecated: Use Wrapf instead.
 func TraceWrap(err error, msg string, args ...any) error {
 	if err == nil {

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "customManagers:githubActionsVersions"
+  ],
+  "minimumReleaseAge": "7 days",
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "automerge": true,
+  "platformAutomerge": false,
+  "packageRules": [
+    {
+      "description": "The go directive is the minimum Go version for consumers of this library, so only raise it on purpose.",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
+      "enabled": false
+    }
+  ]
+}
