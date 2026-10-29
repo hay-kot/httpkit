@@ -45,7 +45,7 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     - gochecknoinits
     - goconst
     - gocritic

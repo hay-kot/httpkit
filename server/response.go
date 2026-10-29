@@ -5,6 +5,19 @@ import (
 	"net/http"
 )
 
+// MarshalFunc encodes a Go value to JSON.
+type MarshalFunc func(v any) ([]byte, error)
+
+var marshal MarshalFunc = json.Marshal
+
+// SetJSONMarshaler sets the function JSON and ErrorBuilder.Write use to encode
+// response bodies. The default is encoding/json.Marshal. Use it to swap in another
+// encoder, such as encoding/json/v2 with custom options. It is not safe to call
+// concurrently with request handling, so set it once at startup.
+func SetJSONMarshaler(fn MarshalFunc) {
+	marshal = fn
+}
+
 // JSON converts a Go value to JSON and sends it to the client.
 // If the code is StatusNoContent, no body is sent.
 // Adapted from https://github.com/ardanlabs/service/tree/master/foundation/web
@@ -14,7 +27,7 @@ func JSON(w http.ResponseWriter, code int, data interface{}) error {
 		return nil
 	}
 
-	jsonData, err := json.Marshal(data)
+	jsonData, err := marshal(data)
 	if err != nil {
 		return err
 	}
