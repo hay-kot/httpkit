@@ -83,8 +83,10 @@ func (svr *Runner) Start(ctx context.Context) error {
 
 	// Start Plugins
 	var (
-		wg          = sync.WaitGroup{}
-		pluginErrCh = make(chan error)
+		wg = sync.WaitGroup{}
+		// Buffered so a plugin that fails before Start reaches the select below
+		// neither blocks nor loses its error.
+		pluginErrCh = make(chan error, len(svr.plugins))
 		wgChannel   = make(chan struct{})
 	)
 
@@ -95,26 +97,14 @@ func (svr *Runner) Start(ctx context.Context) error {
 		close(wgChannel)
 	}()
 
-	var plugErr error
 	for _, p := range svr.plugins {
-		if plugErr != nil {
-			break
-		}
 		go func(p Plugin) {
 			defer func() {
 				wg.Done()
 			}()
 
-			err := p.Start(ctx)
-			if err != nil {
-				plugErr = err
-
-				// safely write to the channel
-				// if the channel is full, we don't want to block
-				select {
-				case pluginErrCh <- err:
-				default:
-				}
+			if err := p.Start(ctx); err != nil {
+				pluginErrCh <- err
 			}
 		}(p)
 	}
