@@ -30,11 +30,7 @@ func stringer(err error) string {
 	lastWasTraceable := false
 	const indent = "    "
 
-	for {
-		if err == nil {
-			break
-		}
-
+	for err != nil {
 		traceable, ok := err.(*stacktrace) //nolint:errorlint
 		if !ok {
 			if !lastWasTraceable {
@@ -58,7 +54,7 @@ func stringer(err error) string {
 
 		lastWasTraceable = true
 
-		str.WriteString(red(bold(("trace error: "))))
+		str.WriteString(red(bold("trace error: ")))
 
 		str.WriteString(traceable.message)
 		str.WriteRune('\n')
@@ -67,7 +63,7 @@ func stringer(err error) string {
 		str.WriteString(indent)
 		str.WriteString(traceable.file)
 		str.WriteRune(':')
-		str.WriteString(fmt.Sprintf("%d", traceable.line))
+		fmt.Fprintf(&str, "%d", traceable.line)
 
 		// Function
 		str.WriteRune('\n')
