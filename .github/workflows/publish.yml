@@ -1,29 +1,24 @@
-name: Build and Publish
-
-permissions:
-  contents: write
+name: Publish
 
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 jobs:
   backend-tests:
     name: "Go Build/Test"
     uses: ./.github/workflows/partial-tests.yml
 
-  goreleaser:
-    name: "Release"
+  release:
+    name: Release
     needs:
       - backend-tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - run: git fetch --force --tags
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ">=1.19.3"
-          cache: true
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
